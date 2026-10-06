@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오늘의 규칙 놀이 — 리듬 규칙 체험하기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-1:#EFF5FF;
+    --bg-2:#F6F0FF;
+    --ink:#2B2250;
+    --ink-soft:#5B5480;
+    --gold:#FFC93C;
+    --mystery-bg:#F0EEFF;
+    --mystery-border:#B7B0F5;
+    --card-bg:#FFFFFF;
+    --shadow: 0 14px 34px -14px rgba(43,34,80,0.28);
+    --chip-bg:#F3F1FB;
+    --chip-border:#DAD5F2;
+    --a-color:#FF8A5B;
+    --a-dark:#E06B3B;
+    --a-bg:#FFF1E8;
+    --b-color:#1FB6AA;
+    --b-dark:#12867D;
+    --b-bg:#E9FBF8;
+    --loop-color:#8B6FD1;
+    --loop-dark:#6A4FC0;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; height:100%; overflow:hidden;
+    font-family:'Gowun Dodum', sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 8% 12%, #FFE9D6 0%, transparent 40%),
+      radial-gradient(circle at 92% 85%, #DDEFFF 0%, transparent 45%),
+      linear-gradient(160deg, var(--bg-1), var(--bg-2));
+  }
+  .viewport{ width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; padding:1.4vh 1.4vw; }
+  .app{ width:100%; height:100%; max-width:1500px; display:flex; flex-direction:column; }
+
+  header{ display:flex; flex-wrap:nowrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:0.9vh; flex-shrink:0; }
+  h1{ font-family:'Jua', sans-serif; font-weight:400; font-size:clamp(19px,2.6vw,30px); margin:0; letter-spacing:.3px; white-space:nowrap; }
+  h1 .note{ color:#E06B3B; }
+  .mode-tabs{ display:flex; gap:5px; background:rgba(255,255,255,0.6); padding:5px; border-radius:999px; box-shadow: inset 0 0 0 1.5px rgba(43,34,80,0.08); flex-wrap:nowrap; }
+  .mode-tab{ border:none; background:transparent; font-family:'Gowun Dodum', sans-serif; font-size:clamp(18px,1.3vw,21px); padding:8px 14px; border-radius:999px; cursor:pointer; color:var(--ink-soft); transition:.2s; white-space:nowrap; }
+  .mode-tab.active{ background:var(--ink); color:#fff; box-shadow: 0 6px 14px -6px rgba(43,34,80,0.5); }
+  .mode-tab:focus-visible, button:focus-visible{ outline:3px solid var(--gold); outline-offset:2px; }
+  .mode-tab .step-badge{ display:inline-block; font-size:13px; background:rgba(255,255,255,0.35); border-radius:999px; padding:1px 7px; margin-right:5px; vertical-align:1px; }
+  .mode-tab:not(.active) .step-badge{ background:#E4E1F5; color:var(--ink-soft); }
+
+  .utility-row{ display:flex; align-items:center; gap:7px; flex-shrink:0; }
+  .utility-row > span{ font-size:16px; color:var(--ink-soft); white-space:nowrap; }
+  .utility-row .switch-label{ font-weight:600; color:var(--ink); }
+  .utility-row input[type="range"]{ width:min(9vw,95px); accent-color:var(--ink); }
+  .utility-row .vol-val{ min-width:36px; font-size:15px; color:var(--ink-soft); }
+  .utility-row .divider{ width:1.5px; height:22px; background:#E4E1F5; margin:0 4px; }
+  .switch{ position:relative; display:inline-block; width:38px; height:22px; flex-shrink:0; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .switch .slider{ position:absolute; inset:0; background:#DAD5F2; transition:.2s; border-radius:999px; cursor:pointer; }
+  .switch .slider:before{ position:absolute; content:""; height:16px; width:16px; left:3px; bottom:3px; background:#fff; transition:.2s; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,0.25); }
+  .switch input:checked + .slider{ background:var(--ink); }
+  .switch input:checked + .slider:before{ transform:translateX(16px); }
+  .switch input:focus-visible + .slider{ outline:3px solid var(--gold); outline-offset:2px; }
+
+  .layout{ flex:1; min-height:0; display:grid; grid-template-columns: minmax(320px,30%) 1fr; gap:1.2vw; }
+
+  .panel-card{ background:var(--card-bg); border-radius:20px; box-shadow:var(--shadow); padding:1.6vh 1.1vw; overflow-y:auto; }
+  .panel-title{ font-size:clamp(18px,1.3vw,20px); color:var(--ink-soft); margin:0 0 4px 1px; font-weight:600; display:flex; align-items:center; gap:6px; }
+  .panel-subnote{ font-size:14px; color:var(--ink-soft); font-weight:400; margin:0 0 8px 2px; }
+  .role-dot{ display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; font-size:14px; font-weight:700; color:#fff; flex-shrink:0; }
+  .role-dot.a{ background:var(--a-dark); }
+  .role-dot.b{ background:var(--b-dark); }
+  .control-block{ margin-bottom:12px; }
+  .control-block.role-a{ background:var(--a-bg); border-radius:14px; padding:9px 10px; }
+  .control-block.role-b{ background:var(--b-bg); border-radius:14px; padding:9px 10px; }
+  .chip-row{ display:flex; gap:6px; flex-wrap:wrap; }
+  .chip-row.chip-row-vertical{ flex-direction:column; gap:7px; }
+  .chip{ border:2px solid var(--chip-border); background:var(--chip-bg); color:var(--ink); font-family:'Gowun Dodum',sans-serif; font-size:clamp(18px,1.3vw,21px); padding:7px 11px; border-radius:12px; cursor:pointer; display:flex; align-items:center; gap:5px; transition:.15s; }
+  .chip-row-vertical .chip{ font-size:clamp(19px,1.6vw,23px); padding:11px 16px; border-radius:14px; gap:10px; width:100%; }
+  .chip:hover{ transform:translateY(-1px); }
+  .chip:disabled{ opacity:0.32; cursor:not-allowed; pointer-events:none; transform:none; }
+  .chip.selected{ background:var(--ink); color:#fff; border-color:var(--ink); box-shadow:0 5px 10px -5px rgba(43,34,80,0.5); }
+  .control-block.role-a .chip.selected{ background:var(--a-dark); border-color:var(--a-dark); }
+  .control-block.role-b .chip.selected{ background:var(--b-dark); border-color:var(--b-dark); }
+  .chip .dots{ display:inline-flex; align-items:center; gap:3px; }
+  .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; border:1.6px solid transparent; box-sizing:border-box; flex-shrink:0; }
+  .chip-row-vertical .chip .dots{ gap:5px; }
+  .chip-row-vertical .dot{ width:15px; height:15px; border-width:2px; }
+  .lvl-pill .dots{ display:inline-flex; align-items:center; gap:5px; }
+  .lvl-pill .dot{ width:clamp(11px,1.3vw,16px); height:clamp(11px,1.3vw,16px); border-width:2px; }
+  .lvl-text{ font-size:clamp(16px,1.1vw,18px); color:var(--ink-soft); margin-top:2px; font-weight:600; }
+  .shape-toggle{ display:inline-flex; gap:6px; background:var(--chip-bg); border-radius:12px; padding:4px; flex-wrap:wrap; }
+  .shape-toggle button{ border:none; background:transparent; padding:10px 16px; border-radius:9px; cursor:pointer; font-family:'Gowun Dodum',sans-serif; font-size:clamp(18px,1.3vw,21px); color:var(--ink-soft); white-space:nowrap; }
+  .shape-toggle button.selected{ background:#fff; color:var(--ink); box-shadow:0 3px 7px -3px rgba(43,34,80,0.35); }
+  .block-status{ font-size:18px; color:var(--ink-soft); margin:5px 0 0 2px; }
+  .repeat-block-select{ background:#F1EDFC; border:2px solid #D9CFF5; border-radius:16px; padding:12px 12px 14px; }
+  .repeat-block-select .panel-title{ color:var(--loop-dark); }
+  .guess-block{ background:#FFF9EE; border:2px solid #FFE1A8; border-radius:16px; padding:12px 12px 14px; }
+
+  .instrument-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .instrument-card{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; border:2px solid var(--chip-border); background:var(--chip-bg); border-radius:14px; padding:12px 6px; cursor:pointer; transition:.15s; font-family:'Gowun Dodum',sans-serif; }
+  .instrument-card:hover{ transform:translateY(-1px); }
+  .instrument-card:disabled{ opacity:0.32; cursor:not-allowed; pointer-events:none; transform:none; }
+  .instrument-card .icon{ font-size:clamp(30px,3vw,38px); line-height:1; }
+  .instrument-card .label{ font-size:18px; color:var(--ink); font-weight:600; }
+  .instrument-card.selected{ background:var(--ink); border-color:var(--ink); box-shadow:0 5px 10px -5px rgba(43,34,80,0.5); }
+  .instrument-card.selected .label{ color:#fff; }
+  .control-block.role-a .instrument-card.selected{ background:var(--a-dark); border-color:var(--a-dark); }
+  .control-block.role-b .instrument-card.selected{ background:var(--b-dark); border-color:var(--b-dark); }
+
+  .stage-card{ background:var(--card-bg); border-radius:20px; box-shadow:var(--shadow); padding:1.4vh 1.2vw; position:relative; overflow:hidden; display:flex; flex-direction:column; min-height:0; }
+  .stage-card::before{ content:""; position:absolute; inset:0; background:linear-gradient(120deg, rgba(255,138,91,0.06), rgba(31,182,170,0.06)); pointer-events:none; }
+
+  .sprockets{ display:flex; justify-content:space-evenly; padding:0 6px; flex-shrink:0; }
+  .sprockets span{ width:6px; height:6px; border-radius:50%; background:#E4E1F5; }
+  .sprockets.top{ margin-bottom:0.6vh; } .sprockets.bottom{ margin-top:0.6vh; }
+
+  .reel{ flex:1; display:flex; gap:clamp(8px,1.5vw,20px); justify-content:center; flex-wrap:nowrap; align-items:center; position:relative; z-index:1; min-height:0; }
+  .reel.wrap-mode{ flex-wrap:wrap; align-content:center; overflow-y:auto; padding:4px; }
+
+  .block{ width:clamp(84px,9.8vw,136px); height:clamp(104px,19vh,190px); border-radius:22px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; position:relative; transition:transform .18s ease, box-shadow .18s ease; flex-shrink:0; padding:8px 6px; }
+  .block .icon{ font-size:clamp(30px,4vw,48px); line-height:1; }
+  .block .label{ font-family:'Gowun Dodum',sans-serif; font-size:clamp(18px,1.2vw,20px); }
+  .block .lvl-pill{ margin-top:2px; background:#FFFFFF; border:2px solid rgba(0,0,0,0.22); border-radius:999px; padding:5px 14px; }
+  .block .lvl-pill-empty{ background:rgba(0,0,0,0.1); border:2px dashed rgba(0,0,0,0.28); color:var(--ink-soft); font-weight:700; font-size:16px; padding:4px 16px; }
+  .block .role-tag{ position:absolute; top:-13px; left:-13px; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:800; color:#fff; box-shadow:0 3px 7px rgba(0,0,0,0.3); border:2.5px solid #fff; }
+  .block .role-tag.a{ background:var(--a-dark); }
+  .block .role-tag.b{ background:var(--b-dark); }
+
+  .block.mystery{ background:var(--mystery-bg); border:3px dashed var(--mystery-border); color:var(--mystery-border); box-shadow:none; animation: floaty 2.2s ease-in-out infinite; cursor:pointer; }
+  .block.mystery .label{ color:var(--ink-soft); }
+  @keyframes floaty{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
+
+  .block.slot-empty{ background:var(--chip-bg); border:3px dashed var(--chip-border); color:var(--chip-border); box-shadow:none; }
+  .block.slot-empty .icon{ font-size:clamp(30px,3.6vw,42px); font-weight:700; color:#C9C3E8; }
+  .block.slot-empty .label{ color:var(--ink-soft); font-size:clamp(16px,1vw,18px); }
+
+  .block.playing{ transform:scale(1.1) translateY(-7px); box-shadow:0 0 0 6px rgba(255,201,60,0.28), 0 10px 20px -8px rgba(43,34,80,0.4) !important; }
+  .block.revealed{ animation:pop .45s ease; }
+  @keyframes pop{ 0%{transform:scale(.85) rotate(-3deg); opacity:0;} 60%{transform:scale(1.06) rotate(1.5deg); opacity:1;} 100%{transform:scale(1) rotate(0);} }
+
+  .stage-pair-plain{ display:flex; gap:clamp(14px,2.2vw,28px); align-items:center; justify-content:center; }
+  .loop-group{ position:relative; display:flex; gap:clamp(6px,1vw,12px); align-items:center; border:3px dashed var(--loop-color); border-radius:22px; padding:14px 16px 14px 26px; margin:0 4px; }
+  .loop-group .block{ width:clamp(72px,8vw,118px); height:clamp(90px,15.5vh,146px); }
+  .loop-group .block .icon{ font-size:clamp(22px,2.8vw,34px); }
+  .loop-group .block .label{ font-size:clamp(14px,1vw,16px); }
+  .loop-group .block .role-tag{ width:28px; height:28px; font-size:14px; top:-10px; left:-10px; }
+  .loop-badge{ position:absolute; top:-15px; left:-15px; width:30px; height:30px; border-radius:50%; background:var(--loop-color); color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; box-shadow:0 3px 8px rgba(0,0,0,0.25); z-index:2; }
+  .loop-group.loop-active{ animation: loopPulse 0.6s ease; border-color:var(--loop-dark); box-shadow:0 0 0 7px rgba(139,111,209,0.25); }
+  @keyframes loopPulse{ 0%{ transform:scale(1); } 50%{ transform:scale(1.035); } 100%{ transform:scale(1); } }
+  .reel:has(.loop-group){ gap:clamp(6px,1.2vw,18px); }
+
+  .speech{ margin:1vh auto 0; max-width:74%; text-align:center; background:#FFF9EE; border:2px solid #FFE1A8; border-radius:14px; padding:0.8vh 18px; font-size:clamp(18px,1.3vw,20px); min-height:20px; position:relative; z-index:1; transition:background .25s ease; flex-shrink:0; }
+  .speech.correct{ background:#EBFAF3; border-color:#9EE6C4; }
+  .speech.wrong{ background:#FDEDE3; border-color:#F3B58A; color:#B3401D; }
+
+  .controls{ display:flex; flex-wrap:nowrap; gap:10px; justify-content:center; margin-top:1vh; position:relative; z-index:1; flex-shrink:0; }
+  .btn{ border:none; cursor:pointer; font-family:'Gowun Dodum',sans-serif; font-size:clamp(18px,1.3vw,20px); padding:10px 20px; border-radius:14px; color:#fff; background:var(--ink); box-shadow:0 6px 12px -6px rgba(43,34,80,0.5); transition:.15s; white-space:nowrap; }
+  .btn:hover{ transform:translateY(-2px); }
+  .btn.primary{ background:linear-gradient(160deg,#FF8A5B,#E06B3B); }
+  .btn.reveal{ background:linear-gradient(160deg,var(--gold),#E0A800); color:var(--ink); }
+  .btn.ghost{ background:#fff; color:var(--ink); box-shadow: inset 0 0 0 2px #E4E1F5; }
+  .btn.loopc{ background:linear-gradient(160deg,#A28CE0,var(--loop-dark)); }
+  .btn.pulse-cta{ animation: ctaPulse 1.3s ease-in-out infinite; }
+  @keyframes ctaPulse{
+    0%,100%{ transform:scale(1); box-shadow:0 6px 12px -6px rgba(43,34,80,0.5); }
+    50%{ transform:scale(1.055); box-shadow:0 10px 20px -6px rgba(139,111,209,0.65); }
+  }
+
+  .hint{ text-align:center; color:var(--ink-soft); font-size:clamp(16px,1.05vw,18px); margin-top:0.7vh; position:relative; z-index:1; flex-shrink:0; }
+  footer{ text-align:center; margin-top:0.7vh; font-size:clamp(13px,1vw,15px); color:var(--ink-soft); flex-shrink:0; line-height:1.4; }
+</style>
+</head>
+<body>
+<div class="viewport">
+<div class="app">
+  <header>
+    <h1>🎵 오늘의 규칙 <span class="note">놀이</span></h1>
+    <div class="mode-tabs" role="tablist" aria-label="개념 모드 선택">
+      <button class="mode-tab active" data-mode="pitch"><span class="step-badge">1차</span>소리 단계 규칙</button>
+      <button class="mode-tab" data-mode="timbre"><span class="step-badge">2차</span>음색 규칙</button>
+      <button class="mode-tab" data-mode="custom"><span class="step-badge">3차</span>나만의 규칙 만들기</button>
+    </div>
+    <div class="utility-row">
+      <label class="switch">
+        <input type="checkbox" id="levelHintToggle">
+        <span class="slider"></span>
+      </label>
+      <span class="switch-label">🔤 단계 글자 힌트</span>
+      <span class="divider"></span>
+      <span>🔈</span>
+      <input type="range" id="volumeSlider" min="0" max="100" value="40" aria-label="음량 조절">
+      <span>🔊</span>
+      <span class="vol-val" id="volumeVal">40%</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="panel-card" id="controlsPanel"></div>
+
+    <div class="stage-card">
+      <div class="sprockets top">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="reel" id="reel"></div>
+      <div class="sprockets bottom">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="speech" id="speech">▶ 재생하기를 눌러 소리 규칙을 들어보세요.</div>
+      <div class="controls" id="mainControls"></div>
+      <div class="hint" id="hint"></div>
+    </div>
+  </div>
+
+  <footer>초등 2학년 2학기 수준 · 규칙 찾기 도입 활동 — 허밍블럭스(악기 블록 + 단계 블록) 연계 · 💡 “❓” 블록을 직접 손가락으로 짚어도 정답이 확인돼요.</footer>
+</div>
+</div>
+
+<script>
+(function(){
+  const INSTRUMENTS = {
+    drum:  { label:'드럼',   icon:'🥁', css:'drum',  synth:'noise' },
+    guitar:{ label:'기타',   icon:'🎸', css:'guitar',synth:'pluck', baseFreq:196 },
+    piano: { label:'피아노', icon:'🎹', css:'piano', synth:'piano', baseFreq:262 },
+    bass:  { label:'베이스', icon:'🎻', css:'bass',  synth:'bass',  baseFreq:98  },
+    brass: { label:'브라스', icon:'🎺', css:'brass', synth:'brass', baseFreq:233 }
+  };
+  const INSTRUMENT_STYLES = {
+    drum:  'background:#FFFFFF; border:5px solid #E63946; color:#2B2250;',
+    guitar:'background:#FFFFFF; border:5px solid #8B5E34; color:#2B2250;',
+    piano: 'background:#FFFFFF; border:5px solid #222222; color:#2B2250;',
+    bass:  'background:#FFFFFF; border:5px solid #2955B8; color:#2B2250;',
+    brass: 'background:#FFFFFF; border:5px solid #E7A431; color:#2B2250;'
+  };
+  const INSTRUMENT_ORDER = ['drum','guitar','piano','bass','brass'];
+  const LEVELS = [1,2,3,4];
+
+  const reel = document.getElementById('reel');
+  const speech = document.getElementById('speech');
+  const hint = document.getElementById('hint');
+  const controlsPanel = document.getElementById('controlsPanel');
+  const mainControls = document.getElementById('mainControls');
+  const tabs = document.querySelectorAll('.mode-tab');
+
+  let audioCtx = null;
+  let noiseBuffer = null;
+  let masterVolume = 0.4;
+  let showLevelText = false;
+  function ensureAudio(){
+    if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+    if(audioCtx.state==='suspended'){ audioCtx.resume(); }
+  }
+  function getNoiseBuffer(){
+    if(noiseBuffer) return noiseBuffer;
+    const size = audioCtx.sampleRate*0.2;
+    const buffer = audioCtx.createBuffer(1,size,audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<size;i++){ data[i]=(Math.random()*2-1)*Math.pow(1-i/size,2); }
+    noiseBuffer = buffer; return buffer;
+  }
+  function freqForLevel(base, level){ return base * Math.pow(1.25, level-1); }
+
+  function playUnit(unit){
+    ensureAudio();
+    const meta = INSTRUMENTS[unit.instrument];
+    const now = audioCtx.currentTime;
+    if(meta.synth==='noise'){
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = getNoiseBuffer();
+      const filter = audioCtx.createBiquadFilter();
+      filter.type='bandpass';
+      filter.Q.value = 0.9;
+      filter.frequency.value = 420 * Math.pow(1.32, unit.level-1);
+      const gain = audioCtx.createGain();
+      const peak = 0.42 * masterVolume;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(peak, now+0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now+0.22);
+      noise.connect(filter).connect(gain).connect(audioCtx.destination);
+      noise.start(now);
+      return;
+    }
+    const freq = freqForLevel(meta.baseFreq, unit.level);
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    let dur = 0.4;
+    if(meta.synth==='pluck'){ osc.type='sawtooth'; dur=0.3; }
+    else if(meta.synth==='piano'){ osc.type='triangle'; dur=0.5; }
+    else if(meta.synth==='bass'){ osc.type='sine'; dur=0.45; }
+    else if(meta.synth==='brass'){ osc.type='square'; dur=0.5; }
+    const peak = 0.4 * masterVolume;
+    osc.frequency.setValueAtTime(freq, now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(peak, now+ (meta.synth==='brass'?0.06:0.015));
+    gain.gain.exponentialRampToValueAtTime(0.0001, now+dur);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now); osc.stop(now+dur+0.05);
+  }
+
+  function dotsHtml(level, onColor){
+    let html='';
+    for(let i=1;i<=4;i++){
+      if(i<=level){
+        const bg = onColor ? '#FFFFFF' : '#000000';
+        const bd = onColor ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.85)';
+        html += `<span class="dot" style="background:${bg};border-color:${bd};"></span>`;
+      } else {
+        const bg = onColor ? 'rgba(255,255,255,0.18)' : '#FFFFFF';
+        const bd = onColor ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.35)';
+        html += `<span class="dot" style="background:${bg};border-color:${bd};"></span>`;
+      }
+    }
+    return html;
+  }
+
+  function instrumentChips(selectedKey, role, locked){
+    return INSTRUMENT_ORDER.map(key=>{
+      const m = INSTRUMENTS[key];
+      const sel = key===selectedKey ? 'selected' : '';
+      const dis = (locked && key!==selectedKey);
+      return `<button class="instrument-card ${sel}" data-role="${role}" data-value="${key}" ${dis?'disabled':''}><span class="icon">${m.icon}</span><span class="label">${m.label}</span></button>`;
+    }).join('');
+  }
+  function instrumentGrid(selectedKey, role, locked){
+    return `<div class="instrument-grid">${instrumentChips(selectedKey, role, locked)}</div>`;
+  }
+  function levelChips(selectedLevel, role, locked){
+    return LEVELS.map(l=>{
+      const sel = l===selectedLevel ? 'selected' : '';
+      const dis = (locked && l!==selectedLevel);
+      return `<button class="chip ${sel}" data-role="${role}" data-value="${l}" ${dis?'disabled':''}><span class="dots">${dotsHtml(l, l===selectedLevel)}</span> ${l}단계</button>`;
+    }).join('');
+  }
+  function levelChipsRow(selectedLevel, role, locked){
+    return `<div class="chip-row chip-row-vertical">${levelChips(selectedLevel, role, locked)}</div>`;
+  }
+  function shapeToggleHtml(selectedShape, roleName){
+    roleName = roleName || 'shape';
+    return `<div class="shape-toggle">
+      <button data-role="${roleName}" data-value="ab" class="${selectedShape==='ab'?'selected':''}">AB 규칙</button>
+      <button data-role="${roleName}" data-value="aba" class="${selectedShape==='aba'?'selected':''}">ABA 규칙</button>
+    </div>`;
+  }
+  function methodToggleHtml(selectedMethod){
+    return `<div class="shape-toggle">
+      <button data-role="custom-method" data-value="pitch" class="${selectedMethod==='pitch'?'selected':''}">방법1 · 소리 단계로</button>
+      <button data-role="custom-method" data-value="timbre" class="${selectedMethod==='timbre'?'selected':''}">방법2 · 음색으로</button>
+    </div>`;
+  }
+  function roleDot(letter){ return `<span class="role-dot ${letter.toLowerCase()}">${letter}</span>`; }
+  function groupHintButtonHtml(){
+    return `<button class="btn ghost" data-role="grouphint">${showGroupHint ? '🙈 힌트 없애기' : '💭 어떤 규칙일까? 생각해보아요 - 힌트'}</button>`;
+  }
+
+  let state = {
+    conceptMode:'pitch',
+    shape:'ab',
+    pitch:{ instrument:'piano', levelA:1, levelB:3 },
+    timbre:{ level:2, instrumentA:'drum', instrumentB:'bass' },
+    custom:{
+      method:'pitch',
+      shape:'ab',
+      blockA:null, blockB:null,
+      buildTarget:null, buildQueue:[], buildPicked:{},
+      bound:false, finalized:false, sequence:[]
+    }
+  };
+
+  let sequence = [];
+  let mysteryFrom = -1;
+  let revealedUpTo = -1;
+  let isPlaying = false;
+  let showGroupHint = false;
+  let guessing = false;
+  let guessStep = 1; // 1 = instrument, 2 = level
+  let guessedInstrument = null; // confirmed-correct instrument for the current mystery slot
+
+  function buildShapeSeq(shape, unitA, unitB){
+    const A = Object.assign({}, unitA, {role:'A'});
+    const B = Object.assign({}, unitB, {role:'B'});
+    if(shape==='ab') return [A,B,A,B,A,B].map(u=>Object.assign({},u));
+    return [A,B,A, A,B,A].map(u=>Object.assign({},u));
+  }
+
+  function computePresetSequence(){
+    if(state.conceptMode==='pitch'){
+      const p = state.pitch;
+      const unitA = {instrument:p.instrument, level:p.levelA};
+      const unitB = {instrument:p.instrument, level:p.levelB};
+      sequence = buildShapeSeq(state.shape, unitA, unitB);
+    } else if(state.conceptMode==='timbre'){
+      const t = state.timbre;
+      const unitA = {instrument:t.instrumentA, level:t.level};
+      const unitB = {instrument:t.instrumentB, level:t.level};
+      sequence = buildShapeSeq(state.shape, unitA, unitB);
+    }
+    mysteryFrom = sequence.length - 1;
+    revealedUpTo = mysteryFrom - 1;
+  }
+
+  function buildStepsFor(method, target){
+    if(method==='pitch'){
+      return target==='A' ? ['instrument','level'] : ['level'];
+    }
+    return ['instrument','level'];
+  }
+
+  function resetCustomBlocks(){
+    const c = state.custom;
+    c.blockA = null; c.blockB = null; c.bound = false; c.finalized = false; c.sequence = [];
+    c.buildTarget = null; c.buildQueue = []; c.buildPicked = {};
+    sequence = []; mysteryFrom = -1; revealedUpTo = -1;
+  }
+
+  function finalizeCustom(){
+    const c = state.custom;
+    sequence = buildShapeSeq(c.shape, c.blockA, c.blockB);
+    c.sequence = sequence.slice();
+    mysteryFrom = sequence.length - 1;
+    revealedUpTo = mysteryFrom - 1;
+    c.finalized = true;
+  }
+
+  function renderControlsPanel(){
+    let html = '';
+    if(guessing && (state.conceptMode==='pitch' || state.conceptMode==='timbre')){
+      if(guessStep===1){
+        html += `<div class="control-block guess-block">
+          <p class="panel-title">🤔 다음에 올 악기는?</p>
+          ${instrumentGrid(null, 'guess-instrument')}
+        </div>`;
+      } else {
+        html += `<div class="control-block guess-block">
+          <p class="panel-title">🤔 다음 카드는 몇 단계일까요?</p>
+          ${levelChipsRow(null, 'guess-level')}
+        </div>`;
+      }
+      controlsPanel.innerHTML = html;
+      return;
+    }
+    if(state.conceptMode==='pitch'){
+      html += `<div class="control-block">
+        <p class="panel-title">🎹 악기 선택</p><p class="panel-subnote">(A·B 공통, 같은 악기)</p>
+        ${instrumentGrid(state.pitch.instrument,'pitch-instrument')}
+      </div>
+      <div class="control-block role-a">
+        <p class="panel-title">${roleDot('A')} A 소리 단계</p>
+        ${levelChipsRow(state.pitch.levelA,'pitch-levelA')}
+      </div>
+      <div class="control-block role-b">
+        <p class="panel-title">${roleDot('B')} B 소리 단계</p>
+        ${levelChipsRow(state.pitch.levelB,'pitch-levelB')}
+      </div>
+      <div class="control-block">${shapeToggleHtml(state.shape)}</div>`;
+    } else if(state.conceptMode==='timbre'){
+      html += `<div class="control-block">
+        <p class="panel-title">🔵 단계 선택</p><p class="panel-subnote">(A·B 공통, 같은 단계)</p>
+        ${levelChipsRow(state.timbre.level,'timbre-level')}
+      </div>
+      <div class="control-block role-a">
+        <p class="panel-title">${roleDot('A')} A 소리 악기</p>
+        ${instrumentGrid(state.timbre.instrumentA,'timbre-instrumentA')}
+      </div>
+      <div class="control-block role-b">
+        <p class="panel-title">${roleDot('B')} B 소리 악기</p>
+        ${instrumentGrid(state.timbre.instrumentB,'timbre-instrumentB')}
+      </div>
+      <div class="control-block">${shapeToggleHtml(state.shape)}</div>`;
+    } else {
+      const c = state.custom;
+      if(c.buildTarget){
+        const step = c.buildQueue[0];
+        if(step==='instrument'){
+          html += `<div class="control-block guess-block">
+            <p class="panel-title">🧩 ${c.buildTarget} 블록 — 악기를 선택하세요</p>
+            ${instrumentGrid(null, 'build-instrument')}
+          </div>`;
+        } else {
+          const lockLevel = (c.method==='timbre' && c.buildTarget==='B' && c.blockA) ? c.blockA.level : null;
+          html += `<div class="control-block guess-block">
+            <p class="panel-title">🧩 ${c.buildTarget} 블록 — 단계를 선택하세요</p>
+            ${levelChipsRow(lockLevel, 'build-level', !!lockLevel)}
+          </div>`;
+        }
+        controlsPanel.innerHTML = html;
+        return;
+      }
+      html += `<div class="control-block">${methodToggleHtml(c.method)}</div>`;
+      html += `<div class="control-block repeat-block-select">
+        <p class="panel-title">🔁 반복 블록 선택하기</p>
+        ${shapeToggleHtml(c.shape,'custom-shape')}
+      </div>`;
+      const aReady = !!c.blockA, bReady = !!c.blockB;
+      html += `<div class="control-block">
+        <button class="btn ${aReady?'ghost':'primary'}" data-role="start-build-a">${aReady?'✅ A 다시 만들기':'A 블록 만들기'}</button>
+        ${aReady ? `<p class="block-status">A: ${INSTRUMENTS[c.blockA.instrument].label} ${c.blockA.level}단계</p>` : ''}
+      </div>
+      <div class="control-block">
+        <button class="btn ${bReady?'ghost':'primary'}" data-role="start-build-b">${bReady?'✅ B 다시 만들기':'B 블록 만들기'}</button>
+        ${bReady ? `<p class="block-status">B: ${INSTRUMENTS[c.blockB.instrument].label} ${c.blockB.level}단계</p>` : ''}
+      </div>`;
+    }
+    controlsPanel.innerHTML = html;
+  }
+
+  function renderMainControls(){
+    if(state.conceptMode==='custom'){
+      const c = state.custom;
+      if(c.finalized){
+        mainControls.innerHTML = `<button class="btn primary" data-role="play">▶ 재생하기</button>
+          ${groupHintButtonHtml()}
+          <button class="btn reveal" data-role="predict">🤔 다음 규칙은?</button>
+          <button class="btn ghost" data-role="reset">↺ 다시 만들기</button>`;
+      } else if(c.bound){
+        mainControls.innerHTML = `<button class="btn loopc pulse-cta" data-role="finalize">🔁 반복 블록에 넣기</button>
+          <button class="btn ghost" data-role="reset">↺ 다시 만들기</button>`;
+      } else if(c.blockA && c.blockB){
+        mainControls.innerHTML = `<button class="btn loopc pulse-cta" data-role="bind">🔗 묶기</button>
+          <button class="btn ghost" data-role="reset">↺ 다시 만들기</button>`;
+      } else {
+        mainControls.innerHTML = `<button class="btn ghost" data-role="reset">↺ 다시 만들기</button>`;
+      }
+    } else {
+      mainControls.innerHTML = `<button class="btn primary" data-role="play">▶ 재생하기</button>
+        ${groupHintButtonHtml()}
+        <button class="btn reveal" data-role="predict">🤔 다음 규칙은?</button>
+        <button class="btn ghost" data-role="reset">↺ 다시하기</button>`;
+    }
+  }
+
+  function blockInnerHtml(unit, roleLetter){
+    const meta = INSTRUMENTS[unit.instrument];
+    const roleTag = roleLetter ? `<span class="role-tag ${roleLetter.toLowerCase()}">${roleLetter}</span>` : '';
+    return `${roleTag}<span class="icon">${meta.icon}</span><span class="label">${meta.label}</span><span class="lvl-pill"><span class="dots">${dotsHtml(unit.level, false)}</span></span>${showLevelText ? `<span class="lvl-text">${unit.level}단계</span>` : ''}`;
+  }
+
+  function partialBlockInnerHtml(instrumentKey, roleLetter){
+    const meta = INSTRUMENTS[instrumentKey];
+    const roleTag = roleLetter ? `<span class="role-tag ${roleLetter.toLowerCase()}">${roleLetter}</span>` : '';
+    return `${roleTag}<span class="icon">${meta.icon}</span><span class="label">${meta.label}</span><span class="lvl-pill lvl-pill-empty">?</span>`;
+  }
+
+  function mysteryOrPartial(el, i){
+    // returns true if it rendered a "partial" (instrument confirmed, level pending) card
+    if(guessing && guessStep===2 && i===mysteryFrom){
+      el.classList.remove('mystery');
+      el.setAttribute('style', INSTRUMENT_STYLES[guessedInstrument]);
+      el.innerHTML = partialBlockInnerHtml(guessedInstrument, sequence[i].role);
+      return true;
+    }
+    el.classList.add('mystery');
+    el.setAttribute('tabindex','0');
+    el.setAttribute('role','button');
+    el.setAttribute('aria-label','다음 소리 확인하기');
+    el.innerHTML = '<span class="icon">❓</span><span class="label">다음은?</span>';
+    return false;
+  }
+
+  function renderCustomStage(){
+    reel.classList.remove('wrap-mode');
+    const c = state.custom;
+    function slotEl(unit, letter){
+      const el = document.createElement('div');
+      if(!unit){
+        el.className = 'block slot-empty';
+        el.innerHTML = `<span class="icon">${letter}</span><span class="label">아직 없음</span>`;
+      } else {
+        el.className = 'block';
+        el.setAttribute('style', INSTRUMENT_STYLES[unit.instrument]);
+        el.innerHTML = blockInnerHtml(unit, letter);
+      }
+      return el;
+    }
+    reel.innerHTML = '';
+    const wrapper = document.createElement('div');
+    if(c.bound){
+      wrapper.className = 'loop-group';
+      const badge = document.createElement('span');
+      badge.className = 'loop-badge';
+      badge.textContent = '🔁';
+      wrapper.appendChild(badge);
+    } else {
+      wrapper.className = 'stage-pair-plain';
+    }
+    const slots = c.shape==='aba' ? ['A','B','A'] : ['A','B'];
+    slots.forEach(letter=>{
+      const unit = letter==='A' ? c.blockA : c.blockB;
+      wrapper.appendChild(slotEl(unit, letter));
+    });
+    reel.appendChild(wrapper);
+  }
+
+  function renderGroupedSequence(activeIndex, shape){
+    reel.classList.remove('wrap-mode');
+    const groupSize = shape==='ab' ? 2 : 3;
+    reel.innerHTML = '';
+    for(let g=0; g<sequence.length; g+=groupSize){
+      const wrapper = document.createElement('div');
+      wrapper.className = 'loop-group';
+      const badge = document.createElement('span');
+      badge.className = 'loop-badge';
+      badge.textContent = '🔁';
+      wrapper.appendChild(badge);
+      let groupActive = false;
+      for(let i=g; i<g+groupSize && i<sequence.length; i++){
+        const unit = sequence[i];
+        const el = document.createElement('div');
+        el.dataset.idx = i;
+        const hidden = (i>revealedUpTo) && (i>=mysteryFrom);
+        el.classList.add('block');
+        if(hidden){
+          mysteryOrPartial(el, i);
+        } else {
+          el.setAttribute('style', INSTRUMENT_STYLES[unit.instrument]);
+          el.innerHTML = blockInnerHtml(unit, unit.role);
+        }
+        if(i===activeIndex){ el.classList.add('playing'); groupActive = true; }
+        wrapper.appendChild(el);
+      }
+      if(groupActive){ wrapper.classList.add('loop-active'); }
+      reel.appendChild(wrapper);
+    }
+  }
+
+  function renderFlatSequence(activeIndex){
+    reel.classList.remove('wrap-mode');
+    reel.innerHTML='';
+    sequence.forEach((unit,i)=>{
+      const el = document.createElement('div');
+      el.dataset.idx = i;
+      const hidden = (i>revealedUpTo) && (i>=mysteryFrom);
+      el.classList.add('block');
+      if(hidden){
+        mysteryOrPartial(el, i);
+      } else {
+        el.setAttribute('style', INSTRUMENT_STYLES[unit.instrument]);
+        el.innerHTML = blockInnerHtml(unit, unit.role);
+      }
+      if(i===activeIndex){ el.classList.add('playing'); }
+      reel.appendChild(el);
+    });
+  }
+
+  function renderReel(activeIndex){
+    if(state.conceptMode==='custom'){
+      const c = state.custom;
+      if(c.finalized){
+        if(showGroupHint){ renderGroupedSequence(activeIndex, c.shape); }
+        else { renderFlatSequence(activeIndex); }
+      } else {
+        renderCustomStage();
+      }
+      return;
+    }
+    if(showGroupHint){ renderGroupedSequence(activeIndex, state.shape); }
+    else { renderFlatSequence(activeIndex); }
+  }
+
+  function updateHint(){
+    if(state.conceptMode==='pitch'){
+      hint.textContent = '같은 악기, 다른 단계로 규칙을 만들어요. 점(●) 개수가 많을수록 소리가 풍성해져요.';
+    } else if(state.conceptMode==='timbre'){
+      hint.textContent = '같은 단계, 다른 악기(음색)로 규칙을 만들어요. 소리의 "색깔"이 바뀌는 규칙이에요.';
+    } else {
+      const c = state.custom;
+      hint.textContent = c.method==='pitch'
+        ? '같은 악기로, A와 B의 단계만 다르게 만들어보세요.'
+        : '같은 단계로, A와 B의 악기만 다르게 만들어보세요.';
+    }
+  }
+
+  function resetSpeech(){
+    speech.className='speech';
+    if(state.conceptMode==='custom'){
+      const c = state.custom;
+      if(c.buildTarget){
+        const step = c.buildQueue[0];
+        speech.textContent = step==='instrument' ? `${c.buildTarget} 블록의 악기를 골라보세요.` : `${c.buildTarget} 블록의 단계를 골라보세요.`;
+      }
+      else if(c.finalized){ speech.textContent = '▶ 재생하기를 눌러 내가 만든 규칙을 들어보세요.'; }
+      else if(c.bound){ speech.textContent = '좋아요! 이제 "반복 블록에 넣기"를 눌러보세요.'; }
+      else if(c.blockA && c.blockB){ speech.textContent = 'A와 B가 준비됐어요. "묶기"를 눌러 한 팀으로 만들어보세요.'; }
+      else if(c.blockA && !c.blockB){ speech.textContent = 'A 완성! 이번엔 B 블록을 만들어보세요.'; }
+      else if(!c.blockA && c.blockB){ speech.textContent = 'B 완성! 이번엔 A 블록도 만들어보세요.'; }
+      else { speech.textContent = '"A 블록 만들기"를 눌러 시작해보세요.'; }
+    } else {
+      speech.textContent = '▶ 재생하기를 눌러 소리 규칙을 들어보세요.';
+    }
+  }
+
+  function fullRender(){
+    renderControlsPanel();
+    renderMainControls();
+    updateHint();
+    renderReel(-1);
+  }
+
+  function switchMode(mode){
+    state.conceptMode = mode;
+    tabs.forEach(t=>t.classList.toggle('active', t.dataset.mode===mode));
+    isPlaying=false;
+    showGroupHint=false;
+    guessing=false; guessStep=1; guessedInstrument=null;
+    if(mode==='custom'){
+      const c = state.custom;
+      if(c.finalized){
+        sequence = c.sequence.slice();
+        mysteryFrom = sequence.length-1;
+        revealedUpTo = mysteryFrom-1;
+      } else {
+        sequence = [];
+        mysteryFrom=-1; revealedUpTo=-1;
+      }
+    } else {
+      computePresetSequence();
+    }
+    resetSpeech();
+    fullRender();
+  }
+
+  async function playSequence(){
+    if(isPlaying || sequence.length===0) return;
+    isPlaying=true;
+    speech.className='speech';
+    speech.textContent='🎧 잘 듣고 규칙을 찾아보세요...';
+    for(let i=0;i<sequence.length;i++){
+      const hidden = (i>revealedUpTo) && (i>=mysteryFrom);
+      if(hidden) break;
+      renderReel(i);
+      playUnit(sequence[i]);
+      await new Promise(r=>setTimeout(r,650));
+    }
+    renderReel(-1);
+    isPlaying=false;
+    if(revealedUpTo<mysteryFrom){
+      speech.textContent='이제 다음에 올 규칙을 예상해볼까요?';
+    } else if(sequence.length>0){
+      speech.className='speech correct';
+      speech.textContent='참 잘했어요! 규칙대로 소리가 반복되었어요 🎉';
+    }
+  }
+
+  function revealNext(){
+    if(revealedUpTo>=mysteryFrom) return;
+    revealedUpTo++;
+    renderReel();
+    const idx = revealedUpTo;
+    playUnit(sequence[idx]);
+    const block = reel.querySelector('[data-idx="'+idx+'"]');
+    if(block){ block.classList.add('revealed'); }
+    speech.className='speech correct';
+    speech.textContent='정답이에요! 규칙대로 소리가 이어졌어요 🎉';
+  }
+
+  function startGuessOrReveal(){
+    if(revealedUpTo>=mysteryFrom) return;
+    if(state.conceptMode==='custom'){
+      revealNext();
+      return;
+    }
+    if(guessing) return;
+    guessing = true;
+    guessStep = 1;
+    guessedInstrument = null;
+    renderControlsPanel();
+    renderMainControls();
+    speech.className='speech';
+    speech.textContent = '다음에 올 악기는 무엇일까요?';
+    renderReel(-1);
+  }
+
+  function resetCurrent(){
+    isPlaying=false;
+    guessing=false; guessStep=1; guessedInstrument=null;
+    if(state.conceptMode==='custom'){
+      resetCustomBlocks();
+    } else {
+      computePresetSequence();
+    }
+    resetSpeech();
+    renderControlsPanel();
+    renderMainControls();
+    renderReel(-1);
+  }
+
+  controlsPanel.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-role]');
+    if(!btn) return;
+    const role = btn.dataset.role;
+    const value = btn.dataset.value;
+    const c = state.custom;
+
+    if(role==='guess-instrument'){
+      const unit = sequence[mysteryFrom];
+      const correct = (value === unit.instrument);
+      if(correct){
+        guessedInstrument = value;
+        guessStep = 2;
+        renderControlsPanel();
+        renderMainControls();
+        speech.className = 'speech correct';
+        speech.textContent = '잘했어요! 이번엔 단계를 골라보세요.';
+        renderReel(-1);
+      } else {
+        speech.className = 'speech wrong';
+        speech.textContent = '다시 해보세요 😅';
+      }
+      return;
+    }
+    if(role==='guess-level'){
+      const unit = sequence[mysteryFrom];
+      const correct = (parseInt(value) === unit.level);
+      if(correct){
+        guessing = false;
+        renderControlsPanel();
+        renderMainControls();
+        revealNext();
+      } else {
+        speech.className = 'speech wrong';
+        speech.textContent = '다시 해보세요 😅';
+      }
+      return;
+    }
+
+    if(role==='pitch-instrument'){ state.pitch.instrument=value; computePresetSequence(); }
+    else if(role==='pitch-levelA'){ state.pitch.levelA=parseInt(value); computePresetSequence(); }
+    else if(role==='pitch-levelB'){ state.pitch.levelB=parseInt(value); computePresetSequence(); }
+    else if(role==='timbre-level'){ state.timbre.level=parseInt(value); computePresetSequence(); }
+    else if(role==='timbre-instrumentA'){ state.timbre.instrumentA=value; computePresetSequence(); }
+    else if(role==='timbre-instrumentB'){ state.timbre.instrumentB=value; computePresetSequence(); }
+    else if(role==='shape'){ state.shape=value; computePresetSequence(); }
+    else if(role==='custom-method'){ c.method=value; resetCustomBlocks(); }
+    else if(role==='custom-shape'){ c.shape=value; c.bound=false; c.finalized=false; sequence=[]; }
+    else if(role==='start-build-a'){
+      c.buildTarget='A'; c.buildQueue=buildStepsFor(c.method,'A'); c.buildPicked={};
+      c.bound=false; c.finalized=false; sequence=[];
+    }
+    else if(role==='start-build-b'){
+      c.buildTarget='B'; c.buildQueue=buildStepsFor(c.method,'B'); c.buildPicked={};
+      if(c.method==='pitch' && c.blockA){ c.buildPicked.instrument=c.blockA.instrument; }
+      c.bound=false; c.finalized=false; sequence=[];
+    }
+    else if(role==='build-instrument' || role==='build-level'){
+      if(role==='build-instrument'){ c.buildPicked.instrument=value; }
+      else { c.buildPicked.level=parseInt(value); }
+      c.buildQueue.shift();
+      if(c.buildQueue.length===0){
+        const unit = { instrument:c.buildPicked.instrument, level:c.buildPicked.level };
+        if(c.buildTarget==='A'){ c.blockA=unit; } else { c.blockB=unit; }
+        c.buildTarget=null; c.buildQueue=[]; c.buildPicked={};
+        c.bound=false; c.finalized=false; sequence=[];
+        playUnit(unit);
+      }
+    }
+    renderControlsPanel();
+    renderMainControls();
+    resetSpeech();
+    updateHint();
+    renderReel(-1);
+  });
+
+  mainControls.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-role]');
+    if(!btn) return;
+    if(btn.dataset.role==='play') playSequence();
+    else if(btn.dataset.role==='predict') startGuessOrReveal();
+    else if(btn.dataset.role==='reset') resetCurrent();
+    else if(btn.dataset.role==='grouphint'){
+      showGroupHint = !showGroupHint;
+      renderMainControls();
+      renderReel(-1);
+    }
+    else if(btn.dataset.role==='bind'){
+      state.custom.bound = true;
+      renderMainControls();
+      resetSpeech();
+      renderReel(-1);
+    }
+    else if(btn.dataset.role==='finalize'){
+      finalizeCustom();
+      renderMainControls();
+      resetSpeech();
+      renderReel(-1);
+    }
+  });
+
+  tabs.forEach(tab=> tab.addEventListener('click', ()=> switchMode(tab.dataset.mode)));
+
+  reel.addEventListener('click', (e)=>{
+    const mysteryBlock = e.target.closest('.block.mystery');
+    if(mysteryBlock){ startGuessOrReveal(); }
+  });
+
+  const volumeSlider = document.getElementById('volumeSlider');
+  const volumeVal = document.getElementById('volumeVal');
+  volumeSlider.addEventListener('input', ()=>{
+    masterVolume = Number(volumeSlider.value)/100;
+    volumeVal.textContent = volumeSlider.value + '%';
+  });
+
+  const levelHintToggle = document.getElementById('levelHintToggle');
+  levelHintToggle.addEventListener('change', ()=>{
+    showLevelText = levelHintToggle.checked;
+    renderReel(-1);
+  });
+
+  switchMode('pitch');
+})();
+</script>
+</body>
+</html>
